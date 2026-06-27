@@ -9,3 +9,4 @@ passlib[bcrypt]
 python-dotenv
 aiosmtplib
 pydantic[email]
+pydantic-settings
