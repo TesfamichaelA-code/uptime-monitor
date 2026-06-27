@@ -1,9 +1,11 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from database import Base, engine
 import models
+from monitor.worker import run_monitor_loop
 from redis_client import redis_client
 from routers.auth import router as auth_router
 from routers.targets import router as targets_router
@@ -16,10 +18,16 @@ async def lifespan(app: FastAPI):
 
     app.state.redis = redis_client
     await app.state.redis.ping()
+    app.state.monitor_task = asyncio.create_task(run_monitor_loop(app))
 
     try:
         yield
     finally:
+        app.state.monitor_task.cancel()
+        try:
+            await app.state.monitor_task
+        except asyncio.CancelledError:
+            pass
         await app.state.redis.aclose()
 
 
