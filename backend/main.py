@@ -6,6 +6,7 @@ from database import Base, engine
 import models
 from redis_client import redis_client
 from routers.auth import router as auth_router
+from routers.targets import router as targets_router
 
 
 @asynccontextmanager
@@ -24,6 +25,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Simple Uptime Monitoring Service", lifespan=lifespan)
 app.include_router(auth_router, prefix="/api")
+app.include_router(targets_router, prefix="/api")
 
 
 @app.get("/health")

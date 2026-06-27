@@ -43,6 +43,9 @@ class TargetOut(BaseModel):
     url: str
     is_active: bool
     created_at: datetime
+    is_up: bool | None = None
+    last_latency_ms: float | None = None
+    last_checked: datetime | None = None
 
 
 class CheckOut(BaseModel):
