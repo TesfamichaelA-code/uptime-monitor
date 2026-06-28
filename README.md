@@ -4,11 +4,8 @@ Simple Uptime Monitoring Service is a FastAPI-based web application that lets us
 
 ## Links
 
-- GitHub repository: `https://github.com/YOUR_GITHUB_USERNAME/uptime-monitor`
-- Live HTTPS deployment: `https://YOUR_DOMAIN`
-- Demo video: `https://youtu.be/YOUR_VIDEO_ID`
-
-Replace the placeholder links above before final submission.
+- GitHub repository: `https://github.com/TesfamichaelA-code/uptime-monitor`
+- Live HTTPS deployment: `https://up-monitor.live`
 
 ## Tech Stack
 
@@ -47,7 +44,7 @@ Replace the placeholder links above before final submission.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/uptime-monitor.git
+git clone https://github.com/TesfamichaelA-code/uptime-monitor.git
 cd uptime-monitor
 ```
 
@@ -193,38 +190,10 @@ The first check for a new target does not send an alert. This avoids false downt
 
 ## Deployment
 
-Deployment instructions are in:
-
-```text
-docs/DEPLOYMENT_GUIDE.md
-```
-
 The production setup uses:
 
 - Azure B2s Ubuntu VM
 - Docker Compose
 - Nginx reverse proxy
-- Domain or DuckDNS subdomain
+- Custom domain
 - Certbot HTTPS certificate
-
-## Demo Script
-
-The recording script is in:
-
-```text
-docs/DEMO_SCRIPT.md
-```
-
-Use it for the required 5-10 minute screen recording.
-
-## Final Submission Checklist
-
-- `README.md` is complete
-- `docker-compose.yml` starts PostgreSQL, Redis, and FastAPI
-- `backend/` contains the FastAPI application, routers, models, monitor worker, and static frontend
-- `nginx/monitor` contains the Nginx reverse proxy template
-- `.env.example` is present
-- `.env` is not committed
-- GitHub repository URL is public
-- Live HTTPS URL works
-- Demo video link is visible in this README
