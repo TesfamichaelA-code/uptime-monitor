@@ -184,9 +184,9 @@ The monitor starts when the FastAPI application starts. Every 60 seconds it:
 2. Sends concurrent `HEAD` requests with a 10-second timeout.
 3. Inserts one `Check` row for every attempt, including failures.
 4. Stores the newest status in Redis under `status:{target_id}`.
-5. Sends an email alert only when the status changes after the first check.
+5. Sends an initial status email on the first check, then sends email alerts only when the status changes.
 
-The first check for a new target does not send an alert. This avoids false downtime emails immediately after a target is added.
+After the first check, users receive another email only when a target changes from up to down or from down back to up.
 
 ## Deployment
 

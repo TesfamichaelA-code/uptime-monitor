@@ -27,6 +27,31 @@ async def send_email(to_address: str, subject: str, body_text: str) -> None:
     )
 
 
+async def notify_initial_status(
+    target: Target,
+    user_email: str,
+    is_up: bool,
+    status_code: int = 0,
+    checked_at: datetime | None = None,
+) -> None:
+    timestamp = (checked_at or datetime.utcnow()).isoformat()
+    state = "responding" if is_up else "unreachable"
+    subject_state = "UP" if is_up else "DOWN"
+    body_text = "\n".join(
+        [
+            f"Initial check: target {target.name} is {state}.",
+            f"URL: {target.url}",
+            f"Status code: {status_code}",
+            f"Timestamp: {timestamp}",
+        ]
+    )
+    await send_email(
+        user_email,
+        f"{subject_state}: {target.name} initial status is {state}",
+        body_text,
+    )
+
+
 async def notify_down(
     target: Target,
     user_email: str,

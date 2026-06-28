@@ -7,7 +7,7 @@ import aiohttp
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from alerting import notify_down, notify_recovery
+from alerting import notify_down, notify_initial_status, notify_recovery
 from database import AsyncSessionLocal
 from models import Check, Target, User
 
@@ -18,13 +18,16 @@ async def trigger_alert(
     is_up: bool,
     status_code: int,
     checked_at: datetime,
+    is_initial: bool = False,
 ) -> None:
     owner = await db.get(User, target.user_id)
     if owner is None:
         return
 
     user_email = owner.notification_email or owner.email
-    if is_up:
+    if is_initial:
+        await notify_initial_status(target, user_email, is_up, status_code, checked_at)
+    elif is_up:
         await notify_recovery(target, user_email, status_code, checked_at)
     else:
         await notify_down(target, user_email, status_code, checked_at)
@@ -60,13 +63,15 @@ async def check_single_target(db: AsyncSession, redis, target: Target) -> None:
     await db.commit()
 
     prev_json = await redis.get(f"status:{target.id}")
-    if prev_json is not None:
-        try:
+    try:
+        if prev_json is None:
+            await trigger_alert(db, target, is_up, status_code, checked_at, is_initial=True)
+        else:
             prev = json.loads(prev_json)
             if prev["is_up"] != is_up:
                 await trigger_alert(db, target, is_up, status_code, checked_at)
-        except Exception as exc:
-            print(f"alert failed for target {target.id}: {exc}", flush=True)
+    except Exception as exc:
+        print(f"alert failed for target {target.id}: {exc}", flush=True)
 
     await redis.set(
         f"status:{target.id}",
