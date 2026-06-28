@@ -1,7 +1,10 @@
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from database import Base, engine
 import models
@@ -9,6 +12,10 @@ from monitor.worker import run_monitor_loop
 from redis_client import redis_client
 from routers.auth import router as auth_router
 from routers.targets import router as targets_router
+
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+INDEX_FILE = STATIC_DIR / "index.html"
 
 
 @asynccontextmanager
@@ -39,3 +46,11 @@ app.include_router(targets_router, prefix="/api")
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+
+@app.get("/", include_in_schema=False)
+async def frontend():
+    return FileResponse(INDEX_FILE)
+
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

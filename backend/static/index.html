@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simple Uptime Monitoring Service</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --text: #1f2933;
+      --muted: #607080;
+      --line: #d8dee6;
+      --primary: #1664c0;
+      --primary-dark: #0f4f9c;
+      --success: #1f9d55;
+      --danger: #d64545;
+      --pending: #8b97a3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.4;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 24px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    main {
+      width: min(1120px, calc(100vw - 32px));
+      margin: 24px auto 48px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .auth-panel {
+      max-width: 420px;
+      margin: 48px auto;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      background: var(--primary);
+      color: #ffffff;
+      cursor: pointer;
+      padding: 10px 14px;
+      min-height: 40px;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button.secondary {
+      background: #e9eef5;
+      color: var(--text);
+    }
+
+    button.secondary:hover {
+      background: #dbe4ef;
+    }
+
+    button.tab {
+      background: #edf1f5;
+      color: var(--text);
+    }
+
+    button.tab.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 12px;
+      min-height: 40px;
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    form button {
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .message {
+      min-height: 22px;
+      margin-top: 12px;
+      color: var(--danger);
+      font-size: 14px;
+    }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .top-row h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .add-form {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(220px, 2fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .add-form label {
+      margin-top: 0;
+    }
+
+    .add-form button {
+      width: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 14px;
+    }
+
+    .target-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      min-height: 170px;
+    }
+
+    .target-card:hover {
+      border-color: #aebdcc;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      background: var(--pending);
+    }
+
+    .status-dot.up {
+      background: var(--success);
+    }
+
+    .status-dot.down {
+      background: var(--danger);
+    }
+
+    .target-name {
+      font-size: 16px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .target-url {
+      color: var(--muted);
+      font-size: 14px;
+      overflow-wrap: anywhere;
+      min-height: 40px;
+      margin-bottom: 12px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .detail {
+      margin-top: 20px;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .detail-header h3 {
+      margin: 0 0 4px;
+      font-size: 19px;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfd;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 20px;
+    }
+
+    .chart-wrap {
+      min-height: 260px;
+      margin-bottom: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 9px 8px;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      padding: 24px 0;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      header {
+        padding: 14px 16px;
+      }
+
+      main {
+        width: min(100vw - 20px, 1120px);
+        margin-top: 14px;
+      }
+
+      .add-form,
+      .metric-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .top-row,
+      .detail-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simple Uptime Monitoring Service</h1>
+  </header>
+
+  <main>
+    <section id="auth-view" class="auth-panel panel">
+      <div class="tabs">
+        <button id="login-tab" class="tab active" type="button">Login</button>
+        <button id="register-tab" class="tab" type="button">Register</button>
+      </div>
+
+      <form id="login-form">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" autocomplete="email" required>
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" required>
+        <button type="submit">Login</button>
+      </form>
+
+      <form id="register-form" class="hidden">
+        <label for="register-email">Email</label>
+        <input id="register-email" type="email" autocomplete="email" required>
+        <label for="register-password">Password</label>
+        <input id="register-password" type="password" autocomplete="new-password" required>
+        <button type="submit">Register</button>
+      </form>
+
+      <div id="auth-message" class="message" aria-live="polite"></div>
+    </section>
+
+    <section id="dashboard-view" class="hidden">
+      <div class="top-row">
+        <h2>Targets</h2>
+        <button id="refresh-button" class="secondary" type="button">Refresh</button>
+      </div>
+
+      <section class="panel">
+        <form id="add-target-form" class="add-form">
+          <div>
+            <label for="target-name">Name</label>
+            <input id="target-name" type="text" required placeholder="Main website">
+          </div>
+          <div>
+            <label for="target-url">URL</label>
+            <input id="target-url" type="url" required placeholder="https://example.com">
+          </div>
+          <button type="submit">Add URL</button>
+        </form>
+        <div id="target-message" class="message" aria-live="polite"></div>
+      </section>
+
+      <section id="target-grid" class="grid" aria-live="polite"></section>
+      <section id="detail-panel" class="detail panel hidden"></section>
+    </section>
+  </main>
+
+  <script>
+    let token = null;
+    let targets = [];
+    let selectedTargetId = null;
+    let latencyChart = null;
+    let refreshTimer = null;
+
+    const authView = document.getElementById('auth-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const authMessage = document.getElementById('auth-message');
+    const targetMessage = document.getElementById('target-message');
+    const targetGrid = document.getElementById('target-grid');
+    const detailPanel = document.getElementById('detail-panel');
+
+    function setAuthTab(mode) {
+      const isLogin = mode === 'login';
+      document.getElementById('login-tab').classList.toggle('active', isLogin);
+      document.getElementById('register-tab').classList.toggle('active', !isLogin);
+      document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+      document.getElementById('register-form').classList.toggle('hidden', isLogin);
+      authMessage.textContent = '';
+    }
+
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, options);
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!response.ok) {
+        const detail = data && data.detail ? data.detail : `Request failed with ${response.status}`;
+        throw new Error(detail);
+      }
+      return data;
+    }
+
+    async function submitAuth(mode, email, password) {
+      authMessage.textContent = '';
+      const data = await api(`/api/auth/${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, notification_email: email })
+      });
+      token = data.access_token;
+      authView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      await loadTargets();
+      if (!refreshTimer) {
+        refreshTimer = setInterval(loadTargets, 30000);
+      }
+    }
+
+    function statusClass(value) {
+      if (value === true) return 'up';
+      if (value === false) return 'down';
+      return '';
+    }
+
+    function formatStatus(value) {
+      if (value === true) return 'Up';
+      if (value === false) return 'Down';
+      return 'Pending';
+    }
+
+    function formatPercent(value) {
+      if (typeof value !== 'number') return 'Pending';
+      return `${value.toFixed(1)}%`;
+    }
+
+    function formatLatency(value) {
+      if (typeof value !== 'number') return 'Pending';
+      return `${Math.round(value)} ms`;
+    }
+
+    function renderTargets() {
+      targetGrid.innerHTML = '';
+      if (targets.length === 0) {
+        targetGrid.innerHTML = '<div class="empty-state">No targets added yet.</div>';
+        return;
+      }
+
+      for (const target of targets) {
+        const card = document.createElement('article');
+        card.className = 'target-card';
+        card.tabIndex = 0;
+        card.dataset.targetId = target.id;
+        card.innerHTML = `
+          <div class="card-title-row">
+            <span class="status-dot ${statusClass(target.is_up)}" aria-label="${formatStatus(target.is_up)}"></span>
+            <span class="target-name"></span>
+          </div>
+          <div class="target-url"></div>
+          <div class="stats-row">
+            <div><span class="stat-label">Status</span><strong>${formatStatus(target.is_up)}</strong></div>
+            <div><span class="stat-label">Last response</span><strong>${formatLatency(target.last_latency_ms)}</strong></div>
+            <div><span class="stat-label">24h uptime</span><strong data-uptime>Loading</strong></div>
+            <div><span class="stat-label">Last checked</span><strong>${target.last_checked ? new Date(target.last_checked).toLocaleString() : 'Pending'}</strong></div>
+          </div>
+        `;
+        card.querySelector('.target-name').textContent = target.name;
+        card.querySelector('.target-url').textContent = target.url;
+        card.addEventListener('click', () => showTargetDetail(target.id));
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            showTargetDetail(target.id);
+          }
+        });
+        targetGrid.appendChild(card);
+        updateCardStats(target.id);
+      }
+    }
+
+    async function updateCardStats(targetId) {
+      try {
+        const stats = await api(`/api/targets/${targetId}/stats`, {
+          headers: authHeaders()
+        });
+        const card = targetGrid.querySelector(`[data-target-id="${targetId}"]`);
+        if (card) {
+          card.querySelector('[data-uptime]').textContent = formatPercent(stats.uptime_percent_24h);
+        }
+      } catch (_) {
+        const card = targetGrid.querySelector(`[data-target-id="${targetId}"]`);
+        if (card) {
+          card.querySelector('[data-uptime]').textContent = 'Pending';
+        }
+      }
+    }
+
+    async function loadTargets() {
+      if (!token) return;
+      targets = await api('/api/targets', { headers: authHeaders() });
+      renderTargets();
+      if (selectedTargetId) {
+        const stillExists = targets.some((target) => target.id === selectedTargetId);
+        if (stillExists) {
+          await showTargetDetail(selectedTargetId, false);
+        } else {
+          selectedTargetId = null;
+          detailPanel.classList.add('hidden');
+        }
+      }
+    }
+
+    async function addTarget(event) {
+      event.preventDefault();
+      targetMessage.textContent = '';
+      const name = document.getElementById('target-name').value.trim();
+      const url = document.getElementById('target-url').value.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        targetMessage.textContent = 'URL must start with http:// or https://';
+        return;
+      }
+      await api('/api/targets', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ name, url })
+      });
+      event.target.reset();
+      await loadTargets();
+    }
+
+    async function showTargetDetail(targetId, scrollIntoView = true) {
+      selectedTargetId = targetId;
+      const target = targets.find((item) => item.id === targetId);
+      if (!target) return;
+
+      const [stats, history] = await Promise.all([
+        api(`/api/targets/${targetId}/stats`, { headers: authHeaders() }),
+        api(`/api/targets/${targetId}/history`, { headers: authHeaders() })
+      ]);
+
+      const lastTwenty = history.slice(0, 20);
+      detailPanel.classList.remove('hidden');
+      detailPanel.innerHTML = `
+        <div class="detail-header">
+          <div>
+            <h3></h3>
+            <div class="target-url"></div>
+          </div>
+          <button id="close-detail" class="secondary" type="button">Close</button>
+        </div>
+        <div class="metric-strip">
+          <div class="metric"><span class="stat-label">24h uptime</span><strong>${formatPercent(stats.uptime_percent_24h)}</strong></div>
+          <div class="metric"><span class="stat-label">7d uptime</span><strong>${formatPercent(stats.uptime_percent_7d)}</strong></div>
+          <div class="metric"><span class="stat-label">Avg latency 24h</span><strong>${formatLatency(stats.avg_latency_24h)}</strong></div>
+        </div>
+        <div class="chart-wrap"><canvas id="latency-chart"></canvas></div>
+        <table>
+          <thead><tr><th>Status</th><th>Latency</th><th>Checked at</th></tr></thead>
+          <tbody id="checks-table"></tbody>
+        </table>
+      `;
+      detailPanel.querySelector('h3').textContent = target.name;
+      detailPanel.querySelector('.target-url').textContent = target.url;
+      detailPanel.querySelector('#close-detail').addEventListener('click', () => {
+        selectedTargetId = null;
+        detailPanel.classList.add('hidden');
+      });
+
+      const tbody = detailPanel.querySelector('#checks-table');
+      if (lastTwenty.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">No checks recorded yet.</td></tr>';
+      } else {
+        for (const check of lastTwenty) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${check.status_code}</td><td>${formatLatency(check.latency_ms)}</td><td>${new Date(check.checked_at).toLocaleString()}</td>`;
+          tbody.appendChild(row);
+        }
+      }
+
+      renderLatencyChart(history);
+      if (scrollIntoView) detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderLatencyChart(history) {
+      const canvas = document.getElementById('latency-chart');
+      if (!canvas || !window.Chart) return;
+      const rows = [...history].reverse();
+      const labels = rows.map((check) => new Date(check.checked_at).toLocaleTimeString());
+      const data = rows.map((check) => check.latency_ms);
+      if (latencyChart) latencyChart.destroy();
+      latencyChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Latency ms',
+            data,
+            borderColor: '#1664c0',
+            backgroundColor: 'rgba(22, 100, 192, 0.15)',
+            tension: 0.25
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    document.getElementById('login-tab').addEventListener('click', () => setAuthTab('login'));
+    document.getElementById('register-tab').addEventListener('click', () => setAuthTab('register'));
+    document.getElementById('refresh-button').addEventListener('click', loadTargets);
+    document.getElementById('add-target-form').addEventListener('submit', addTarget);
+
+    document.getElementById('login-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await submitAuth('login', document.getElementById('login-email').value, document.getElementById('login-password').value);
+      } catch (error) {
+        authMessage.textContent = error.message;
+      }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await submitAuth('register', document.getElementById('register-email').value, document.getElementById('register-password').value);
+      } catch (error) {
+        authMessage.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
