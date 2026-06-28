@@ -79,25 +79,15 @@ Important: never commit `.env`. It contains secrets. Only `.env.example` should 
 
 ### 3. Start the application
 
-If your machine has Docker Compose v1:
-
-```bash
-docker-compose up -d --build
-```
-
-If your machine has Docker Compose v2:
+Use Docker Compose v2:
 
 ```bash
 docker compose up -d --build
 ```
 
+Docker Compose v1 (`docker-compose`) is no longer maintained and can fail on newer Docker Engine versions with `KeyError: 'ContainerConfig'`.
+
 ### 4. Verify the containers
-
-```bash
-docker-compose ps
-```
-
-or:
 
 ```bash
 docker compose ps

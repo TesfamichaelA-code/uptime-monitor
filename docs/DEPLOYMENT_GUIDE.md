@@ -64,8 +64,10 @@ On the VM:
 
 ```bash
 sudo apt update
-sudo apt install -y docker.io docker-compose nginx certbot python3-certbot-nginx git
+sudo apt install -y docker.io docker-compose-v2 nginx certbot python3-certbot-nginx git
 ```
+
+Use Docker Compose v2 (`docker compose`). Do not install the legacy Python `docker-compose` v1 package; it can fail on newer Docker Engine versions with `KeyError: 'ContainerConfig'`. If the `docker-compose-v2` package is unavailable on your Ubuntu image, install Docker's official Compose plugin package (`docker-compose-plugin`) and keep using `docker compose`.
 
 Enable and start Docker:
 
@@ -91,7 +93,7 @@ Verify Docker works without `sudo`:
 
 ```bash
 docker --version
-docker-compose --version
+docker compose version
 ```
 
 ## 5. Clone the Repository
@@ -148,13 +150,13 @@ Security rule: never commit `.env`. If `.env` is accidentally pushed to GitHub, 
 From the repository directory on the VM:
 
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 Verify all containers are running:
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 You should see:
@@ -166,9 +168,9 @@ You should see:
 Check logs if something fails:
 
 ```bash
-docker-compose logs fastapi-app
-docker-compose logs postgres
-docker-compose logs redis
+docker compose logs fastapi-app
+docker compose logs postgres
+docker compose logs redis
 ```
 
 Test the local app from the VM:
@@ -376,8 +378,19 @@ docs/DEPLOYMENT_GUIDE.md
 If Docker containers are not up:
 
 ```bash
-docker-compose ps
-docker-compose logs fastapi-app
+docker compose ps
+docker compose logs fastapi-app
+```
+
+If `docker-compose up -d --build` fails with `KeyError: 'ContainerConfig'`, the VM is using legacy Compose v1. Install Compose v2, remove the partially recreated app container, and start the stack again:
+
+```bash
+sudo apt update
+sudo apt install -y docker-compose-v2
+docker compose version
+docker rm -f uptime-monitor_fastapi-app_1 2>/dev/null || true
+docker compose up -d --build
+docker compose ps
 ```
 
 If the site works on port 8000 but not through the domain:
@@ -392,8 +405,8 @@ If `https://YOUR_DOMAIN/docs` works but `https://YOUR_DOMAIN/` shows `{"detail":
 
 ```bash
 git pull
-docker-compose up -d --build
-docker-compose exec fastapi-app test -f /app/static/index.html
+docker compose up -d --build
+docker compose exec fastapi-app test -f /app/static/index.html
 curl -I http://127.0.0.1:8000/
 sudo systemctl restart nginx
 ```
@@ -412,7 +425,7 @@ If email alerts do not arrive:
 1. Confirm `SMTP_USER` is the Gmail address.
 2. Confirm `SMTP_PASS` is a Gmail app password, not the normal Gmail password.
 3. Confirm the monitor status changed after the first check.
-4. Check logs with `docker-compose logs fastapi-app`.
+4. Check logs with `docker compose logs fastapi-app`.
 
 ## 14. Final Submission Items
 
