@@ -7,13 +7,27 @@ import aiohttp
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from alerting import notify_down, notify_recovery
 from database import AsyncSessionLocal
-from models import Check, Target
+from models import Check, Target, User
 
 
-async def trigger_alert(db: AsyncSession, target: Target, is_up: bool) -> None:
-    # Phase 9 will send the email alert for this state transition.
-    return None
+async def trigger_alert(
+    db: AsyncSession,
+    target: Target,
+    is_up: bool,
+    status_code: int,
+    checked_at: datetime,
+) -> None:
+    owner = await db.get(User, target.user_id)
+    if owner is None:
+        return
+
+    user_email = owner.notification_email or owner.email
+    if is_up:
+        await notify_recovery(target, user_email, status_code, checked_at)
+    else:
+        await notify_down(target, user_email, status_code, checked_at)
 
 
 async def check_single_target(db: AsyncSession, redis, target: Target) -> None:
@@ -50,9 +64,9 @@ async def check_single_target(db: AsyncSession, redis, target: Target) -> None:
         try:
             prev = json.loads(prev_json)
             if prev["is_up"] != is_up:
-                await trigger_alert(db, target, is_up)
-        except (json.JSONDecodeError, KeyError, TypeError):
-            pass
+                await trigger_alert(db, target, is_up, status_code, checked_at)
+        except Exception as exc:
+            print(f"alert failed for target {target.id}: {exc}", flush=True)
 
     await redis.set(
         f"status:{target.id}",
