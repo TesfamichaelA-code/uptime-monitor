@@ -4,8 +4,8 @@ Simple Uptime Monitoring Service is a FastAPI-based web application that lets us
 
 ## Links
 
-- Video demo: `https://www.awesomescreenshot.com/video/54043778?key=0b7c92b76efc32a819c05ccbc3c2bb48`
-- Live HTTPS deployment: `https://up-monitor.live`
+- Video demo: [Watch Video Demo](https://www.awesomescreenshot.com/video/54043778?key=0b7c92b76efc32a819c05ccbc3c2bb48)
+- Live HTTPS deployment: [up-monitor.live](https://up-monitor.live)
 
 ## Tech Stack
 
