@@ -3,72 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Simple Uptime Monitoring Service</title>
+  <title>Up Monitor</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg: #f6f7f9;
-      --surface: #ffffff;
-      --text: #1f2933;
-      --muted: #607080;
-      --line: #d8dee6;
-      --primary: #1664c0;
-      --primary-dark: #0f4f9c;
-      --success: #1f9d55;
-      --danger: #d64545;
-      --pending: #8b97a3;
+      --bg: #0b0f0d;
+      --sidebar: #050705;
+      --surface: #121714;
+      --surface-2: #181f1b;
+      --surface-3: #202820;
+      --line: #28342d;
+      --line-strong: #3b4a40;
+      --text: #f4f7f4;
+      --muted: #a6b3aa;
+      --muted-2: #748079;
+      --primary: #1ed760;
+      --primary-dark: #17b950;
+      --primary-soft: rgba(30, 215, 96, 0.12);
+      --danger: #ff5f57;
+      --danger-dark: #d94c45;
+      --warning: #ffbd4a;
+      --info: #6bd5ff;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html {
+      color-scheme: dark;
+    }
+
     body {
       margin: 0;
+      min-height: 100vh;
       background: var(--bg);
       color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      line-height: 1.4;
-    }
-
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-      padding: 16px 24px;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    main {
-      width: min(1120px, calc(100vw - 32px));
-      margin: 24px auto 48px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 20px;
-    }
-
-    .auth-panel {
-      max-width: 420px;
-      margin: 48px auto;
-    }
-
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      line-height: 1.45;
     }
 
     button,
@@ -77,181 +50,476 @@
     }
 
     button {
-      border: 0;
-      border-radius: 6px;
-      background: var(--primary);
-      color: #ffffff;
-      cursor: pointer;
-      padding: 10px 14px;
       min-height: 40px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #031007;
+      cursor: pointer;
+      font-weight: 800;
+      padding: 10px 15px;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
     }
 
     button:hover {
       background: var(--primary-dark);
+      transform: translateY(-1px);
     }
 
-    button.secondary {
-      background: #e9eef5;
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    button.secondary,
+    button.ghost {
+      background: var(--surface-3);
+      border: 1px solid var(--line-strong);
       color: var(--text);
     }
 
-    button.secondary:hover {
-      background: #dbe4ef;
+    button.secondary:hover,
+    button.ghost:hover {
+      background: #2b352d;
     }
 
-    button.tab {
-      background: #edf1f5;
-      color: var(--text);
+    button.danger {
+      background: rgba(255, 95, 87, 0.14);
+      border: 1px solid rgba(255, 95, 87, 0.45);
+      color: #ffd8d5;
     }
 
-    button.tab.active {
-      background: var(--primary);
+    button.danger:hover {
+      background: var(--danger-dark);
       color: #ffffff;
+    }
+
+    button.small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 13px;
     }
 
     label {
       display: block;
-      margin: 12px 0 6px;
-      font-size: 14px;
+      margin: 0 0 7px;
       color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
     }
 
     input {
       width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 6px;
+      min-height: 42px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #080b09;
+      color: var(--text);
       padding: 10px 12px;
-      min-height: 40px;
-      background: #ffffff;
+    }
+
+    input::placeholder {
+      color: var(--muted-2);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 244px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      min-height: 100vh;
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      padding: 22px 18px;
+      position: sticky;
+      top: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: var(--primary);
+      display: grid;
+      grid-template-columns: repeat(3, 5px);
+      gap: 4px;
+      align-items: end;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 28px rgba(30, 215, 96, 0.28);
+    }
+
+    .brand-mark span {
+      display: block;
+      width: 5px;
+      border-radius: 5px;
+      background: #041208;
+    }
+
+    .brand-mark span:nth-child(1) { height: 13px; }
+    .brand-mark span:nth-child(2) { height: 22px; }
+    .brand-mark span:nth-child(3) { height: 17px; }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .brand-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 1px;
+    }
+
+    .side-status {
+      margin-top: 26px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .side-status span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .side-status strong {
+      display: block;
+      color: var(--primary);
+      font-size: 15px;
+    }
+
+    .content {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    .content-inner {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .page-title h1,
+    .page-title h2 {
+      margin: 0;
+      font-size: clamp(26px, 3.3vw, 44px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .page-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 680px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .auth-panel {
+      max-width: 440px;
+      margin: min(12vh, 80px) auto 0;
+      padding: 24px;
+    }
+
+    .auth-heading {
+      margin-bottom: 18px;
+    }
+
+    .auth-heading h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .auth-heading p {
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 4px;
+      border-radius: 8px;
+      background: #080b09;
+      border: 1px solid var(--line);
+    }
+
+    button.tab {
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+    }
+
+    button.tab.active {
+      background: var(--surface-3);
       color: var(--text);
     }
 
-    form button {
-      margin-top: 16px;
+    form button[type="submit"] {
       width: 100%;
+      margin-top: 16px;
+    }
+
+    .field-stack {
+      display: grid;
+      gap: 14px;
     }
 
     .message {
       min-height: 22px;
       margin-top: 12px;
-      color: var(--danger);
+      color: #ffb4af;
       font-size: 14px;
+      font-weight: 700;
     }
 
-    .top-row {
+    .message.success-message {
+      color: var(--primary);
+    }
+
+    .dashboard-actions {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 12px;
       margin-bottom: 16px;
     }
 
-    .top-row h2 {
-      margin: 0;
-      font-size: 20px;
+    .summary-item {
+      padding: 15px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
     }
 
-    .add-form {
+    .summary-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .summary-item strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1.05;
+    }
+
+    .add-panel {
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .add-form,
+    .edit-form {
       display: grid;
-      grid-template-columns: minmax(160px, 1fr) minmax(220px, 2fr) auto;
+      grid-template-columns: minmax(160px, 0.8fr) minmax(240px, 1.7fr) auto;
       gap: 12px;
       align-items: end;
-      margin-bottom: 20px;
     }
 
-    .add-form label {
-      margin-top: 0;
-    }
-
-    .add-form button {
+    .add-form button,
+    .edit-form button {
       width: auto;
+      margin-top: 0;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
       gap: 14px;
     }
 
     .target-card {
+      min-height: 220px;
+      padding: 16px;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 16px;
       cursor: pointer;
-      min-height: 170px;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
     }
 
-    .target-card:hover {
-      border-color: #aebdcc;
+    .target-card:hover,
+    .target-card.selected {
+      background: var(--surface-2);
+      border-color: rgba(30, 215, 96, 0.55);
+      transform: translateY(-2px);
     }
 
-    .card-title-row {
+    .card-title-row,
+    .detail-title-row {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    .status-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex: 0 0 auto;
-      background: var(--pending);
-    }
-
-    .status-dot.up {
-      background: var(--success);
-    }
-
-    .status-dot.down {
-      background: var(--danger);
+      margin-bottom: 10px;
     }
 
     .target-name {
-      font-size: 16px;
-      font-weight: 700;
+      min-width: 0;
+      font-size: 17px;
+      font-weight: 900;
       overflow-wrap: anywhere;
+    }
+
+    .status-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 900;
+      background: rgba(255, 189, 74, 0.12);
+      color: #ffd88a;
+    }
+
+    .status-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--warning);
+    }
+
+    .status-badge.up {
+      background: rgba(30, 215, 96, 0.13);
+      color: #9af3b8;
+    }
+
+    .status-badge.up::before {
+      background: var(--primary);
+    }
+
+    .status-badge.down {
+      background: rgba(255, 95, 87, 0.13);
+      color: #ffb4af;
+    }
+
+    .status-badge.down::before {
+      background: var(--danger);
     }
 
     .target-url {
       color: var(--muted);
       font-size: 14px;
       overflow-wrap: anywhere;
-      min-height: 40px;
-      margin-bottom: 12px;
+      min-height: 42px;
+      margin-bottom: 14px;
     }
 
     .stats-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      font-size: 14px;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-cell {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0c100e;
+      min-width: 0;
     }
 
     .stat-label {
-      color: var(--muted);
       display: block;
-      font-size: 12px;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
+      color: var(--muted-2);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .stat-cell strong,
+    .metric strong {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+
+    .card-actions,
+    .detail-actions,
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .detail {
-      margin-top: 20px;
+      margin-top: 18px;
+      padding: 18px;
     }
 
     .detail-header {
       display: flex;
-      align-items: start;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
       margin-bottom: 16px;
     }
 
     .detail-header h3 {
-      margin: 0 0 4px;
-      font-size: 19px;
+      margin: 0 0 5px;
+      font-size: 24px;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-header .target-url {
+      min-height: 0;
+      margin-bottom: 0;
     }
 
     .metric-strip {
@@ -264,18 +532,21 @@
     .metric {
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
-      background: #fbfcfd;
+      padding: 14px;
+      background: #0c100e;
     }
 
     .metric strong {
-      display: block;
-      font-size: 20px;
+      font-size: 22px;
     }
 
     .chart-wrap {
-      min-height: 260px;
+      height: 280px;
       margin-bottom: 18px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0c100e;
     }
 
     table {
@@ -288,99 +559,190 @@
     td {
       border-bottom: 1px solid var(--line);
       text-align: left;
-      padding: 9px 8px;
+      padding: 11px 8px;
+      vertical-align: top;
     }
 
     th {
       color: var(--muted);
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
     }
 
     .empty-state {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      padding: 24px;
       color: var(--muted);
-      padding: 24px 0;
       text-align: center;
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      background: var(--surface);
     }
 
-    @media (max-width: 720px) {
-      header {
-        padding: 14px 16px;
-      }
-
-      main {
-        width: min(100vw - 20px, 1120px);
-        margin-top: 14px;
-      }
-
-      .add-form,
-      .metric-strip {
+    @media (max-width: 900px) {
+      .app-shell {
         grid-template-columns: 1fr;
       }
 
-      .top-row,
+      .sidebar {
+        min-height: auto;
+        position: static;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .side-status {
+        display: none;
+      }
+
+      .summary-strip {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
+      }
+
+      .top-bar,
       .detail-header {
         align-items: stretch;
         flex-direction: column;
+      }
+
+      .dashboard-actions,
+      .detail-actions {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .content {
+        padding: 16px;
+      }
+
+      .add-form,
+      .edit-form,
+      .metric-strip,
+      .summary-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .add-form button,
+      .edit-form button,
+      .form-actions button {
+        width: 100%;
+      }
+
+      .form-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Simple Uptime Monitoring Service</h1>
-  </header>
-
-  <main>
-    <section id="auth-view" class="auth-panel panel">
-      <div class="tabs">
-        <button id="login-tab" class="tab active" type="button">Login</button>
-        <button id="register-tab" class="tab" type="button">Register</button>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand" aria-label="Up Monitor">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="brand-copy">
+          <strong>Up Monitor</strong>
+          <span>Status dashboard</span>
+        </div>
       </div>
-
-      <form id="login-form">
-        <label for="login-email">Email</label>
-        <input id="login-email" type="email" autocomplete="email" required>
-        <label for="login-password">Password</label>
-        <input id="login-password" type="password" autocomplete="current-password" required>
-        <button type="submit">Login</button>
-      </form>
-
-      <form id="register-form" class="hidden">
-        <label for="register-email">Email</label>
-        <input id="register-email" type="email" autocomplete="email" required>
-        <label for="register-password">Password</label>
-        <input id="register-password" type="password" autocomplete="new-password" required>
-        <button type="submit">Register</button>
-      </form>
-
-      <div id="auth-message" class="message" aria-live="polite"></div>
-    </section>
-
-    <section id="dashboard-view" class="hidden">
-      <div class="top-row">
-        <h2>Targets</h2>
-        <button id="refresh-button" class="secondary" type="button">Refresh</button>
+      <div class="side-status">
+        <span>Deployment</span>
+        <strong>up-monitor.live</strong>
       </div>
+    </aside>
 
-      <section class="panel">
-        <form id="add-target-form" class="add-form">
-          <div>
-            <label for="target-name">Name</label>
-            <input id="target-name" type="text" required placeholder="Main website">
+    <main class="content">
+      <div class="content-inner">
+        <section id="auth-view" class="auth-panel panel">
+          <div class="auth-heading">
+            <h1>Monitor your URLs</h1>
+            <p>Sign in to track uptime, latency, and recovery alerts.</p>
           </div>
-          <div>
-            <label for="target-url">URL</label>
-            <input id="target-url" type="url" required placeholder="https://example.com">
-          </div>
-          <button type="submit">Add URL</button>
-        </form>
-        <div id="target-message" class="message" aria-live="polite"></div>
-      </section>
 
-      <section id="target-grid" class="grid" aria-live="polite"></section>
-      <section id="detail-panel" class="detail panel hidden"></section>
-    </section>
-  </main>
+          <div class="tabs">
+            <button id="login-tab" class="tab active" type="button">Login</button>
+            <button id="register-tab" class="tab" type="button">Register</button>
+          </div>
+
+          <form id="login-form" class="field-stack">
+            <div>
+              <label for="login-email">Email</label>
+              <input id="login-email" type="email" autocomplete="email" required>
+            </div>
+            <div>
+              <label for="login-password">Password</label>
+              <input id="login-password" type="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit">Login</button>
+          </form>
+
+          <form id="register-form" class="field-stack hidden">
+            <div>
+              <label for="register-email">Email</label>
+              <input id="register-email" type="email" autocomplete="email" required>
+            </div>
+            <div>
+              <label for="register-password">Password</label>
+              <input id="register-password" type="password" autocomplete="new-password" required>
+            </div>
+            <button type="submit">Register</button>
+          </form>
+
+          <div id="auth-message" class="message" aria-live="polite"></div>
+        </section>
+
+        <section id="dashboard-view" class="hidden">
+          <div class="top-bar">
+            <div class="page-title">
+              <h2>Targets</h2>
+              <p>Track current status, response time, and recent uptime for every monitored endpoint.</p>
+            </div>
+            <div class="dashboard-actions">
+              <button id="refresh-button" class="secondary" type="button">Refresh</button>
+              <button id="logout-button" class="ghost" type="button">Logout</button>
+            </div>
+          </div>
+
+          <section class="summary-strip" aria-label="Target summary">
+            <div class="summary-item"><span>Total</span><strong id="summary-total">0</strong></div>
+            <div class="summary-item"><span>Up</span><strong id="summary-up">0</strong></div>
+            <div class="summary-item"><span>Down</span><strong id="summary-down">0</strong></div>
+            <div class="summary-item"><span>Pending</span><strong id="summary-pending">0</strong></div>
+          </section>
+
+          <section class="add-panel panel">
+            <form id="add-target-form" class="add-form">
+              <div>
+                <label for="target-name">Name</label>
+                <input id="target-name" type="text" required placeholder="Main website">
+              </div>
+              <div>
+                <label for="target-url">URL</label>
+                <input id="target-url" type="url" required placeholder="https://example.com">
+              </div>
+              <button type="submit">Add URL</button>
+            </form>
+            <div id="target-message" class="message" aria-live="polite"></div>
+          </section>
+
+          <section id="target-grid" class="grid" aria-live="polite"></section>
+          <section id="detail-panel" class="detail panel hidden"></section>
+        </section>
+      </div>
+    </main>
+  </div>
 
   <script>
     let token = null;
@@ -396,13 +758,18 @@
     const targetGrid = document.getElementById('target-grid');
     const detailPanel = document.getElementById('detail-panel');
 
+    function setMessage(element, text, tone = 'error') {
+      element.textContent = text;
+      element.classList.toggle('success-message', tone === 'success');
+    }
+
     function setAuthTab(mode) {
       const isLogin = mode === 'login';
       document.getElementById('login-tab').classList.toggle('active', isLogin);
       document.getElementById('register-tab').classList.toggle('active', !isLogin);
       document.getElementById('login-form').classList.toggle('hidden', !isLogin);
       document.getElementById('register-form').classList.toggle('hidden', isLogin);
-      authMessage.textContent = '';
+      setMessage(authMessage, '');
     }
 
     function authHeaders() {
@@ -424,18 +791,21 @@
     }
 
     async function submitAuth(mode, email, password) {
-      authMessage.textContent = '';
+      setMessage(authMessage, '');
+      const payload = mode === 'register'
+        ? { email, password, notification_email: email }
+        : { email, password };
       const data = await api(`/api/auth/${mode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, notification_email: email })
+        body: JSON.stringify(payload)
       });
       token = data.access_token;
       authView.classList.add('hidden');
       dashboardView.classList.remove('hidden');
-      await loadTargets();
+      await loadTargets(true);
       if (!refreshTimer) {
-        refreshTimer = setInterval(loadTargets, 30000);
+        refreshTimer = setInterval(() => loadTargets(false), 30000);
       }
     }
 
@@ -461,7 +831,33 @@
       return `${Math.round(value)} ms`;
     }
 
+    function formatDate(value) {
+      if (!value) return 'Pending';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Pending';
+      return date.toLocaleString();
+    }
+
+    function validateTargetInput(name, url) {
+      if (!name) return 'Name is required';
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return 'URL must start with http:// or https://';
+      }
+      return '';
+    }
+
+    function updateSummary() {
+      const up = targets.filter((target) => target.is_up === true).length;
+      const down = targets.filter((target) => target.is_up === false).length;
+      const pending = targets.length - up - down;
+      document.getElementById('summary-total').textContent = targets.length;
+      document.getElementById('summary-up').textContent = up;
+      document.getElementById('summary-down').textContent = down;
+      document.getElementById('summary-pending').textContent = pending;
+    }
+
     function renderTargets() {
+      updateSummary();
       targetGrid.innerHTML = '';
       if (targets.length === 0) {
         targetGrid.innerHTML = '<div class="empty-state">No targets added yet.</div>';
@@ -470,26 +866,42 @@
 
       for (const target of targets) {
         const card = document.createElement('article');
-        card.className = 'target-card';
+        card.className = `target-card${target.id === selectedTargetId ? ' selected' : ''}`;
         card.tabIndex = 0;
         card.dataset.targetId = target.id;
         card.innerHTML = `
           <div class="card-title-row">
-            <span class="status-dot ${statusClass(target.is_up)}" aria-label="${formatStatus(target.is_up)}"></span>
             <span class="target-name"></span>
+            <span class="status-badge ${statusClass(target.is_up)}">${formatStatus(target.is_up)}</span>
           </div>
           <div class="target-url"></div>
           <div class="stats-row">
-            <div><span class="stat-label">Status</span><strong>${formatStatus(target.is_up)}</strong></div>
-            <div><span class="stat-label">Last response</span><strong>${formatLatency(target.last_latency_ms)}</strong></div>
-            <div><span class="stat-label">24h uptime</span><strong data-uptime>Loading</strong></div>
-            <div><span class="stat-label">Last checked</span><strong>${target.last_checked ? new Date(target.last_checked).toLocaleString() : 'Pending'}</strong></div>
+            <div class="stat-cell"><span class="stat-label">Last response</span><strong>${formatLatency(target.last_latency_ms)}</strong></div>
+            <div class="stat-cell"><span class="stat-label">24h uptime</span><strong data-uptime>Loading</strong></div>
+            <div class="stat-cell"><span class="stat-label">Last checked</span><strong>${formatDate(target.last_checked)}</strong></div>
+            <div class="stat-cell"><span class="stat-label">Status</span><strong>${formatStatus(target.is_up)}</strong></div>
+          </div>
+          <div class="card-actions">
+            <button class="small ghost" type="button" data-action="view">View</button>
+            <button class="small secondary" type="button" data-action="edit">Edit</button>
+            <button class="small danger" type="button" data-action="delete">Delete</button>
           </div>
         `;
         card.querySelector('.target-name').textContent = target.name;
         card.querySelector('.target-url').textContent = target.url;
-        card.addEventListener('click', () => showTargetDetail(target.id));
+        card.addEventListener('click', (event) => {
+          const button = event.target.closest('button');
+          if (button) {
+            const action = button.dataset.action;
+            if (action === 'view') showTargetDetail(target.id);
+            if (action === 'edit') openEditTarget(target.id);
+            if (action === 'delete') deleteTarget(target.id);
+            return;
+          }
+          showTargetDetail(target.id);
+        });
         card.addEventListener('keydown', (event) => {
+          if (event.target !== card) return;
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             showTargetDetail(target.id);
@@ -517,28 +929,33 @@
       }
     }
 
-    async function loadTargets() {
+    async function loadTargets(showErrors = false) {
       if (!token) return;
-      targets = await api('/api/targets', { headers: authHeaders() });
-      renderTargets();
-      if (selectedTargetId) {
-        const stillExists = targets.some((target) => target.id === selectedTargetId);
-        if (stillExists) {
-          await showTargetDetail(selectedTargetId, false);
-        } else {
-          selectedTargetId = null;
-          detailPanel.classList.add('hidden');
+      try {
+        targets = await api('/api/targets', { headers: authHeaders() });
+        renderTargets();
+        if (selectedTargetId) {
+          const stillExists = targets.some((target) => target.id === selectedTargetId);
+          if (stillExists) {
+            await showTargetDetail(selectedTargetId, false);
+          } else {
+            selectedTargetId = null;
+            detailPanel.classList.add('hidden');
+          }
         }
+      } catch (error) {
+        if (showErrors) setMessage(targetMessage, error.message);
       }
     }
 
     async function addTarget(event) {
       event.preventDefault();
-      targetMessage.textContent = '';
+      setMessage(targetMessage, '');
       const name = document.getElementById('target-name').value.trim();
       const url = document.getElementById('target-url').value.trim();
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        targetMessage.textContent = 'URL must start with http:// or https://';
+      const validationError = validateTargetInput(name, url);
+      if (validationError) {
+        setMessage(targetMessage, validationError);
         return;
       }
       await api('/api/targets', {
@@ -547,11 +964,19 @@
         body: JSON.stringify({ name, url })
       });
       event.target.reset();
-      await loadTargets();
+      setMessage(targetMessage, 'Target added. First check will run on the next cycle.', 'success');
+      await loadTargets(true);
+    }
+
+    function setSelectedCard(targetId) {
+      for (const card of targetGrid.querySelectorAll('.target-card')) {
+        card.classList.toggle('selected', Number(card.dataset.targetId) === targetId);
+      }
     }
 
     async function showTargetDetail(targetId, scrollIntoView = true) {
       selectedTargetId = targetId;
+      setSelectedCard(targetId);
       const target = targets.find((item) => item.id === targetId);
       if (!target) return;
 
@@ -565,10 +990,17 @@
       detailPanel.innerHTML = `
         <div class="detail-header">
           <div>
-            <h3></h3>
+            <div class="detail-title-row">
+              <h3></h3>
+              <span class="status-badge ${statusClass(target.is_up)}">${formatStatus(target.is_up)}</span>
+            </div>
             <div class="target-url"></div>
           </div>
-          <button id="close-detail" class="secondary" type="button">Close</button>
+          <div class="detail-actions">
+            <button id="edit-detail" class="secondary" type="button">Edit</button>
+            <button id="delete-detail" class="danger" type="button">Delete</button>
+            <button id="close-detail" class="ghost" type="button">Close</button>
+          </div>
         </div>
         <div class="metric-strip">
           <div class="metric"><span class="stat-label">24h uptime</span><strong>${formatPercent(stats.uptime_percent_24h)}</strong></div>
@@ -576,31 +1008,116 @@
           <div class="metric"><span class="stat-label">Avg latency 24h</span><strong>${formatLatency(stats.avg_latency_24h)}</strong></div>
         </div>
         <div class="chart-wrap"><canvas id="latency-chart"></canvas></div>
-        <table>
-          <thead><tr><th>Status</th><th>Latency</th><th>Checked at</th></tr></thead>
-          <tbody id="checks-table"></tbody>
-        </table>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Status</th><th>Code</th><th>Latency</th><th>Checked at</th></tr></thead>
+            <tbody id="checks-table"></tbody>
+          </table>
+        </div>
       `;
       detailPanel.querySelector('h3').textContent = target.name;
       detailPanel.querySelector('.target-url').textContent = target.url;
       detailPanel.querySelector('#close-detail').addEventListener('click', () => {
         selectedTargetId = null;
+        setSelectedCard(null);
         detailPanel.classList.add('hidden');
       });
+      detailPanel.querySelector('#edit-detail').addEventListener('click', () => openEditTarget(targetId));
+      detailPanel.querySelector('#delete-detail').addEventListener('click', () => deleteTarget(targetId));
 
       const tbody = detailPanel.querySelector('#checks-table');
       if (lastTwenty.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">No checks recorded yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">No checks recorded yet.</td></tr>';
       } else {
         for (const check of lastTwenty) {
           const row = document.createElement('tr');
-          row.innerHTML = `<td>${check.status_code}</td><td>${formatLatency(check.latency_ms)}</td><td>${new Date(check.checked_at).toLocaleString()}</td>`;
+          row.innerHTML = `<td>${formatStatus(check.is_up)}</td><td>${check.status_code}</td><td>${formatLatency(check.latency_ms)}</td><td>${formatDate(check.checked_at)}</td>`;
           tbody.appendChild(row);
         }
       }
 
       renderLatencyChart(history);
       if (scrollIntoView) detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function openEditTarget(targetId) {
+      selectedTargetId = targetId;
+      setSelectedCard(targetId);
+      const target = targets.find((item) => item.id === targetId);
+      if (!target) return;
+
+      detailPanel.classList.remove('hidden');
+      detailPanel.innerHTML = `
+        <div class="detail-header">
+          <div>
+            <h3>Edit target</h3>
+            <div class="target-url"></div>
+          </div>
+          <div class="detail-actions">
+            <button id="cancel-edit-top" class="ghost" type="button">Cancel</button>
+          </div>
+        </div>
+        <form id="edit-target-form" class="edit-form">
+          <div>
+            <label for="edit-target-name">Name</label>
+            <input id="edit-target-name" type="text" required>
+          </div>
+          <div>
+            <label for="edit-target-url">URL</label>
+            <input id="edit-target-url" type="url" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit">Save changes</button>
+            <button id="cancel-edit" class="secondary" type="button">Cancel</button>
+            <button id="delete-edit" class="danger" type="button">Delete</button>
+          </div>
+        </form>
+      `;
+      detailPanel.querySelector('.target-url').textContent = target.url;
+      detailPanel.querySelector('#edit-target-name').value = target.name;
+      detailPanel.querySelector('#edit-target-url').value = target.url;
+      detailPanel.querySelector('#edit-target-form').addEventListener('submit', (event) => saveTargetEdit(event, targetId));
+      detailPanel.querySelector('#cancel-edit').addEventListener('click', () => showTargetDetail(targetId));
+      detailPanel.querySelector('#cancel-edit-top').addEventListener('click', () => showTargetDetail(targetId));
+      detailPanel.querySelector('#delete-edit').addEventListener('click', () => deleteTarget(targetId));
+      detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function saveTargetEdit(event, targetId) {
+      event.preventDefault();
+      setMessage(targetMessage, '');
+      const name = document.getElementById('edit-target-name').value.trim();
+      const url = document.getElementById('edit-target-url').value.trim();
+      const validationError = validateTargetInput(name, url);
+      if (validationError) {
+        setMessage(targetMessage, validationError);
+        return;
+      }
+      await api(`/api/targets/${targetId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ name, url })
+      });
+      setMessage(targetMessage, 'Target updated. URL changes start with fresh checks.', 'success');
+      await loadTargets(true);
+      await showTargetDetail(targetId);
+    }
+
+    async function deleteTarget(targetId) {
+      const target = targets.find((item) => item.id === targetId);
+      if (!target) return;
+      if (!window.confirm(`Delete ${target.name}?`)) return;
+      await api(`/api/targets/${targetId}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      if (selectedTargetId === targetId) {
+        selectedTargetId = null;
+        detailPanel.classList.add('hidden');
+      }
+      targets = targets.filter((item) => item.id !== targetId);
+      renderTargets();
+      setMessage(targetMessage, 'Target deleted.', 'success');
     }
 
     function renderLatencyChart(history) {
@@ -617,30 +1134,72 @@
           datasets: [{
             label: 'Latency ms',
             data,
-            borderColor: '#1664c0',
-            backgroundColor: 'rgba(22, 100, 192, 0.15)',
-            tension: 0.25
+            borderColor: '#1ed760',
+            backgroundColor: 'rgba(30, 215, 96, 0.16)',
+            pointBackgroundColor: '#1ed760',
+            pointBorderColor: '#0b0f0d',
+            borderWidth: 2,
+            tension: 0.28,
+            fill: true
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          scales: { y: { beginAtZero: true } }
+          plugins: {
+            legend: {
+              labels: { color: '#a6b3aa' }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#748079', maxRotation: 0 },
+              grid: { color: 'rgba(166, 179, 170, 0.08)' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#748079' },
+              grid: { color: 'rgba(166, 179, 170, 0.1)' }
+            }
+          }
         }
       });
     }
 
+    function logout() {
+      token = null;
+      targets = [];
+      selectedTargetId = null;
+      if (latencyChart) latencyChart.destroy();
+      latencyChart = null;
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = null;
+      targetGrid.innerHTML = '';
+      detailPanel.classList.add('hidden');
+      dashboardView.classList.add('hidden');
+      authView.classList.remove('hidden');
+      setMessage(targetMessage, '');
+      setMessage(authMessage, '');
+    }
+
     document.getElementById('login-tab').addEventListener('click', () => setAuthTab('login'));
     document.getElementById('register-tab').addEventListener('click', () => setAuthTab('register'));
-    document.getElementById('refresh-button').addEventListener('click', loadTargets);
-    document.getElementById('add-target-form').addEventListener('submit', addTarget);
+    document.getElementById('refresh-button').addEventListener('click', () => loadTargets(true));
+    document.getElementById('logout-button').addEventListener('click', logout);
+    document.getElementById('add-target-form').addEventListener('submit', async (event) => {
+      try {
+        await addTarget(event);
+      } catch (error) {
+        setMessage(targetMessage, error.message);
+      }
+    });
 
     document.getElementById('login-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       try {
         await submitAuth('login', document.getElementById('login-email').value, document.getElementById('login-password').value);
       } catch (error) {
-        authMessage.textContent = error.message;
+        setMessage(authMessage, error.message);
       }
     });
 
@@ -649,7 +1208,7 @@
       try {
         await submitAuth('register', document.getElementById('register-email').value, document.getElementById('register-password').value);
       } catch (error) {
-        authMessage.textContent = error.message;
+        setMessage(authMessage, error.message);
       }
     });
   </script>

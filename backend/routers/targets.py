@@ -2,13 +2,13 @@ import json
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from deps import get_current_user
 from models import Check, Target, User
-from schemas import CheckOut, StatsOut, TargetCreate, TargetOut
+from schemas import CheckOut, StatsOut, TargetCreate, TargetOut, TargetUpdate
 
 router = APIRouter(prefix="/targets", tags=["targets"])
 
@@ -116,6 +116,7 @@ async def list_targets(
 @router.delete("/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_target(
     target_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
@@ -124,9 +125,37 @@ async def delete_target(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target not found")
 
     target.is_active = False
+    await request.app.state.redis.delete(f"status:{target.id}")
     await db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{target_id}", response_model=TargetOut)
+async def update_target(
+    target_id: int,
+    target_data: TargetUpdate,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> TargetOut:
+    validate_url(target_data.url)
+    target = await get_target_for_user(target_id, current_user, db)
+
+    old_url = target.url
+    target.name = target_data.name
+    target.url = target_data.url
+
+    if old_url != target_data.url:
+        await db.execute(delete(Check).where(Check.target_id == target.id))
+        await request.app.state.redis.delete(f"status:{target.id}")
+
+    await db.commit()
+    await db.refresh(target)
+
+    raw_status = await request.app.state.redis.get(f"status:{target.id}")
+    return target_response(target, parse_target_status(raw_status))
+
 
 @router.get("/{target_id}/stats", response_model=StatsOut)
 async def get_target_stats(

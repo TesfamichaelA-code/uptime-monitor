@@ -34,6 +34,11 @@ class TargetCreate(BaseModel):
     url: str
 
 
+class TargetUpdate(BaseModel):
+    name: str
+    url: str
+
+
 class TargetOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
